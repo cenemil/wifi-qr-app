@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import '../index.css'
 
 const STORAGE_KEY = 'admin_networks'
+const BASE_URL = `${location.origin}${location.pathname}`
 
 function loadNetworks() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [] }
@@ -11,6 +12,12 @@ function loadNetworks() {
 
 function saveNetworks(list) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
+}
+
+function networkShareUrl(n) {
+  const params = new URLSearchParams({ ssid: n.ssid, sec: n.security })
+  if (n.security !== 'None' && n.password) params.set('pw', n.password)
+  return `${BASE_URL}#/?${params.toString()}`
 }
 
 const SECURITY_OPTIONS = ['WPA3', 'WPA2', 'WPA', 'None']
@@ -32,6 +39,14 @@ export default function AdminDashboard() {
   const [modal, setModal]       = useState(null) // null | { mode:'add'|'edit', form, editId }
   const [deleteConfirm, setDeleteConfirm] = useState(null) // id to delete
   const [formError, setFormError] = useState('')
+  const [copied, setCopied]     = useState(null) // network id that was just copied
+
+  function copyLink(n) {
+    navigator.clipboard.writeText(networkShareUrl(n)).then(() => {
+      setCopied(n.id)
+      setTimeout(() => setCopied(c => c === n.id ? null : c), 2000)
+    })
+  }
 
   function logout() {
     sessionStorage.removeItem('admin_auth')
@@ -208,6 +223,13 @@ export default function AdminDashboard() {
                                 onClick={() => toggleNetwork(n.id)}
                               >
                                 {n.active ? 'Disable' : 'Enable'}
+                              </button>
+                              <button
+                                className="btn btn-ghost btn-auto"
+                                style={{ height: 30, padding: '0 12px', fontSize: 12 }}
+                                onClick={() => copyLink(n)}
+                              >
+                                {copied === n.id ? 'Copied!' : 'Share'}
                               </button>
                               <button
                                 className="btn btn-ghost btn-auto"
