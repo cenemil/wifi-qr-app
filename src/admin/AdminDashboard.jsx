@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { QRCodeSVG } from 'qrcode.react'
 import '../index.css'
 
 const STORAGE_KEY = 'admin_networks'
@@ -40,6 +41,7 @@ export default function AdminDashboard() {
   const [deleteConfirm, setDeleteConfirm] = useState(null) // id to delete
   const [formError, setFormError] = useState('')
   const [copied, setCopied]     = useState(null) // network id that was just copied
+  const [qrNetwork, setQrNetwork] = useState(null) // network being shown in QR modal
 
   function copyLink(n) {
     navigator.clipboard.writeText(networkShareUrl(n)).then(() => {
@@ -227,6 +229,13 @@ export default function AdminDashboard() {
                               <button
                                 className="btn btn-ghost btn-auto"
                                 style={{ height: 30, padding: '0 12px', fontSize: 12 }}
+                                onClick={() => setQrNetwork(n)}
+                              >
+                                QR
+                              </button>
+                              <button
+                                className="btn btn-ghost btn-auto"
+                                style={{ height: 30, padding: '0 12px', fontSize: 12 }}
                                 onClick={() => copyLink(n)}
                               >
                                 {copied === n.id ? 'Copied!' : 'Share'}
@@ -308,6 +317,36 @@ export default function AdminDashboard() {
           </div>
         </Overlay>
       )}
+
+      {/* QR Code Modal */}
+      {qrNetwork && (() => {
+        const url = networkShareUrl(qrNetwork)
+        return (
+          <Overlay onClose={() => setQrNetwork(null)}>
+            <div style={{ ...styles.modal, alignItems: 'center', textAlign: 'center', maxWidth: 360 }}>
+              <h2 style={styles.modalTitle}>{qrNetwork.ssid}</h2>
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: -8 }}>
+                {qrNetwork.security} · {qrNetwork.active ? 'Active' : 'Inactive'}
+              </p>
+
+              <div style={{ background: '#fff', padding: 16, borderRadius: 16, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>
+                <QRCodeSVG value={url} size={200} bgColor="#ffffff" fgColor="#111110" level="M" />
+              </div>
+
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', wordBreak: 'break-all', lineHeight: 1.5, maxWidth: 300 }}>
+                {url}
+              </p>
+
+              <div className="row2" style={{ width: '100%' }}>
+                <button className="btn btn-ghost" onClick={() => setQrNetwork(null)}>Close</button>
+                <button className="btn btn-primary" onClick={() => copyLink(qrNetwork)}>
+                  {copied === qrNetwork.id ? 'Copied!' : 'Copy Link'}
+                </button>
+              </div>
+            </div>
+          </Overlay>
+        )
+      })()}
 
       {/* Delete Confirm Modal */}
       {deleteConfirm !== null && (
